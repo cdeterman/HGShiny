@@ -1,8 +1,15 @@
 library(shiny)
 library(HGmiscTools)
+library(knitr)
 
 # global maximum number of plots
 max_plots=10
+
+# mad function
+mad_model <- function(model, raw_data, expo = TRUE){
+  diff <- abs(raw_data - exp(predict(model)))
+  return(mean(diff))
+}
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
@@ -258,6 +265,24 @@ shinyServer(function(input, output) {
   })
   
 }
-  
+
+# Exporting function
+{
+  output$downloadPDF <-
+    downloadHandler(filename = "report.pdf",
+                    content = function(file){
+                      # generate PDF
+                      knit2pdf("report.Rnw")
+                      # copy pdf to 'file'
+                      file.copy("report.pdf", file)
+                      # delete generated files
+                      file.remove("report.pdf", "report.tex",
+                                  "report.aux", "report.log")
+                      # delete folder with plots
+                      unlink("figure", recursive = TRUE)
+                    },
+                    contentType = "application/pdf"
+    )
+}
   }
 )
