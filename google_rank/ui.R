@@ -25,6 +25,9 @@ shinyUI(
         ),
       
       mainPanel(
+        # download PDF option
+        downloadButton("downloadPDF", "Download PDF report"),
+        br(),
         # print coefficient table
         uiOutput("model_text"),
         tableOutput("regTab"),
