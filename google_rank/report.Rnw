@@ -1,0 +1,146 @@
+% !Tex program = pdfLaTeX
+
+\documentclass{article}
+\usepackage{fullpage} % set all margins to 1in
+% \usepackage[top=2in, bottom=1.5in, left=1in, right=1in]{geometry} % set custom margins
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage[font={bf,sf,small},% san-serif font for float captions
+                skip=0pt,% no space between captions and floats
+                labelfont=bf,% caption lable (ie "Table 1") in bold face
+                justification=justified,% left-justify captions
+                singlelinecheck=false]{caption}
+                
+\lstset{
+    language=R,
+    basicstyle=\ttfamily,
+    escapeinside=||
+} % allow escape function
+
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\rfoot{\thepage}
+\pagestyle{fancy}
+
+\title{Linear Model Analysis}
+
+\begin{document}
+%\SweaveOpts{concordance=TRUE}
+
+<<setup, echo=FALSE, results="hide", message=FALSE>>=
+options(replace.assign=TRUE,width=90)
+opts_chunk$set(fig.path='fig/demo-', cache.path='cache/manual-',
+               fig.align='center', dev='pdf', tidy=FALSE,
+               fig.width=3.9, 
+               fig.height=3.8, 
+               #out.width='0.47\\textwidth', 
+               fig.show='hold',
+               cache=TRUE, par=TRUE)
+knit_hooks$set(par=function(before, options, envir){
+if (before && options$fig.show!='none') par(mar=c(4,4,1.6,.2),
+              cex=1, cex.lab=.95,cex.axis=.9,mgp=c(2,.7,0),tcl=-.3)
+}, crop=hook_pdfcrop)
+
+opts_knit$set(eval.after = 'fig.cap')
+
+@
+
+\maketitle
+\section{Introduction}
+This is a report of the results of linear regression analysis from the google\_rank shiny
+application.  Herein, this report contains the model diagnostics and basic graphics for all
+included independent variables.
+
+\section{Linear Model Results}
+Coefficient Table
+<<echo=FALSE, results='asis'>>=
+library(xtable)
+lm_sum <- summary(runRegression())
+coefs <- as.data.frame(lm_sum$coefficients)
+coefs[,4] <- signif(coefs[,4], 4)
+coefs[,4] <- as.character(coefs[,4])
+coefs[,1:3] <- sapply(coefs[,1:3], FUN = function(x) round(x, 4))
+xtable(as.matrix(coefs))
+@
+
+Model Diagnostics
+<<echo=FALSE, results='asis'>>=
+library(HGmiscTools)
+df <- df()
+mod <- summary(runRegression())
+mat <- as.matrix(data.frame(R2 = round(mod$r.squared, 4), Adj.R2 = round(mod$adj.r.squared, 4),
+                            MAD = round(mad_model(runRegression(), df[, input$dv]), 5)))
+print(xtable(mat, digits=4), include.rownames=FALSE)
+@
+
+ANOVA Table
+<<echo=FALSE, results='asis'>>=
+M <- as.data.frame(anova(runRegression()))
+M$Df <- as.integer(M$Df)
+print(xtable(M, digits=4))
+@
+
+\newpage
+
+%\section{Graphs Side by Side}
+%The two plots show the model performance results.  Figure \ref{fig:}
+
+\section{Model Performance Plots}
+<<actual_vs_pred, eval=FALSE, echo=FALSE>>=
+df <- df()
+actual <- df[, input$dv]
+lm_out <- runRegression()
+#par(mfrow=c(1,2))
+pred <- ifelse(rep(input$log, nrow(df)), exp(predict(lm_out)), predict(lm_out))
+plot(actual, pred, 
+     pch=1, 
+     ylab = "Predicted", 
+     xlab = "Actual", 
+     main="A",
+     adj=0)
+
+plot(actual, col="green", ylab = input$dv, pch=19, main="B", adj=0)
+points(pred, col="red", pch=19)
+@
+
+
+% \begin{figure}
+<<actual_vs_pred-gph, ref.label="actual_vs_pred", echo=FALSE>>=
+@
+
+\captionof{figure}{Acutal vs. predicted values of \texttt{\detokenize{\Sexpr{input$dv}}} using the fitted linear model.
+  Panel A shows the data plotted against each other to determine correlation (R2 = \Sexpr{round(cor(actual, pred)^2, 4)}),
+  while Panel B shows the actual and predicted values together.
+  \label{fig:act_v_pred}}
+% \end{figure}
+
+
+\newpage
+
+\section{Independent Variable Plots}
+<<box_hist, eval=FALSE, echo=FALSE>>=
+for(i in 1:(length(input$ivs))){
+  my_i <- i
+  iv <- input$ivs[my_i]
+# par(mfrow=c(1,2))
+  par(ps=12, cex=1, cex.main=1)
+  boxplot(df_transform()[,input$ivs[my_i]], main = input$ivs[my_i])
+  hist(df_transform()[, input$ivs[my_i]], main = input$ivs[my_i], xlab = input$ivs[my_i])
+}
+@
+
+
+% \begin{figure}
+<<box_hist-gph, ref.label="box_hist", echo=FALSE>>=
+@
+
+% \caption{Boxplot and histogram for \texttt{\detokenize{\Sexpr{input$ivs}}}.
+%   \label{fig:box_hist}}
+% \end{figure}
+
+\end{document}
+
+
+
+
+
