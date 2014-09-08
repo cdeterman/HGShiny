@@ -38,7 +38,8 @@ shinyServer(function(input, output) {
     selectInput("dv",
                 label = h3("Choose Dependent Variable"), 
                 choices = colnames,
-                selected = "client_calls_per_designated_search",
+                #selected = "client_calls_per_designated_search",
+                selected = colnames[1],
                 width = '100%')
   })
   
@@ -65,8 +66,10 @@ shinyServer(function(input, output) {
     # Create checkboxes for variables to include in model
     checkboxGroupInput("ivs", 
                        label = h3("Variables"), 
-                       choices = colnames,
-                       selected = c("client_google_rank", "client_search_per_client_providers"))
+                       choices = colnames
+                       #,selected = c("client_google_rank", "client_search_per_client_providers")
+                       ,selected = colnames[2]
+                       )
   })
   
   # option to transform IV's
@@ -279,7 +282,8 @@ shinyServer(function(input, output) {
                       file.remove("report.pdf", "report.tex",
                                   "report.aux", "report.log")
                       # delete folder with plots
-                      unlink("figure", recursive = TRUE)
+                      unlink("fig", recursive = TRUE)
+                      unlink("cache", recursive = TRUE)
                     },
                     contentType = "application/pdf"
     )
